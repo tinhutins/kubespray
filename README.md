@@ -71,4 +71,6 @@ Deactivate and remove venv from our repo at the end since we don't need ansible 
     rm -rf venv-kubespray/
 ```
 
+Idea is to have this kind of env at the and with all services around kubespray:
+
 ![alt text](./tino-external-iac.jpeg?raw=true "Cratis Kubernetes Enviroment")
