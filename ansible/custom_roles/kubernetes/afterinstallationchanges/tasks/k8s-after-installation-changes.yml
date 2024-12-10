@@ -1,0 +1,45 @@
+---
+
+- name: Install pip3 and kubernetes
+  package:
+    name:
+      - python3-pip
+      - python3-kubernetes
+    state: latest
+
+# Creat secret with Cratis signed certificate and key
+- name: Configure cratis tls certificate
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: tino-ingress-certificate
+        namespace: default
+      type: tls
+      data:
+        tls.crt: "{{ tino_certificate.content | b64encode }}"
+        tls.key: "{{ tino_certificate_key.content | b64encode }}"
+
+- name: Apply ingress-nginx LB service if it doesn't exists
+  kubernetes.core.k8s:
+    state: present
+    namespace: ingress-nginx
+    template: "templates/{{ item }}"
+  with_items:
+    - ingress-nginx-svc.j2
+
+# We are changing calico-controller metrics port because alertmanager is listening using port 9094
+# No need for this patch anymore, since metrics_server_container_port is on 4443 (addons.yml)
+# - name: Change calico-kube-controllers metrics port
+#   shell: |
+#     calicoctl patch kubecontrollersconfiguration default --patch '{"spec":{"prometheusMetricsPort": 9095}}'
+
+# - name: Calico-kube-controllers deployment restart rollout
+#   shell: |
+#     kubectl -n kube-system rollout restart deployment calico-kube-controllers
+
+- name: Set kubernetes cluster default namespace to default
+  shell: |
+    kubectl config set-context --current --namespace=default

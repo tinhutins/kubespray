@@ -1,0 +1,124 @@
+---
+- name: Create argocd namespace
+  kubernetes.core.k8s:
+    name: argocd
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Apply argocd ingress
+  kubernetes.core.k8s:
+    state: present
+    namespace: argocd
+    template: "templates/{{ item }}"
+  with_items:
+    - argocd-server-http-ingress.j2
+    - argocd-server-grpc-ingress.j2
+
+- name: Apply argocd configmap
+  kubernetes.core.k8s:
+    state: present
+    namespace: argocd
+    template: "templates/{{ item }}"
+  with_items:
+    - argocd-cmd-params-cm.j2
+
+- name: Install argocd cli
+  get_url:
+    url: https://github.com/argoproj/argo-cd/releases/download/{{ k8s_argocd_version }}/argocd-linux-amd64
+    dest: /usr/local/bin/argocd
+    mode: '0755'
+
+- name: Download argocd manifest to the cluster
+  get_url:
+    url: https://raw.githubusercontent.com/argoproj/argo-cd/{{ k8s_argocd_version }}/manifests/ha/install.yaml
+    dest: ~/argocd.yaml
+    mode: '0664'
+
+- name: Apply argocd manifest to the cluster
+  kubernetes.core.k8s:
+    state: present
+    namespace: argocd
+    src: ~/argocd.yaml
+
+- name: Remove argocd manifest file
+  file:
+    path: ~/argocd.yaml
+    state: absent
+
+- name: Wait for argocd-server deployment "True" on MinimumReplicasAvailable
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: argocd-server
+        namespace: argocd
+      spec:
+        paused: True
+    wait: yes
+    wait_condition:
+      type: Available
+      status: "True"
+      reason: MinimumReplicasAvailable
+    wait_timeout: 240
+
+# ArgoCD TLS configuration # Argo API and UI only / Argo repo server TLS is not set
+# Uncomment this part if ArgoCD TLS needs to be terminated behind the k8s ingress
+# - name: Configure argocd tls certificates
+#   kubernetes.core.k8s:
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: argocd-server-tls
+#         namespace: argocd
+#       type: tls
+#       data:
+#         tls.crt: "{{ tino_certificate.content | b64encode }}"
+#         tls.key: "{{ tino_certificate_key.content | b64encode }}"
+
+- name: Get argo admin secret
+  shell: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+  register: argo
+
+- name: Set argo admin secret
+  set_fact:
+    argo_secret: "{{ argo.stdout }}"
+
+- name: Login to argocd cli
+  shell: argocd login {{ argocd_fqdn }}:443 --core
+
+- name: Sleep for 180 seconds until argo is completely up
+  wait_for:
+    timeout: 180
+
+- name: Add app of apps gitlab repository
+  shell: |
+    kubectl config set-context --current --namespace=argocd
+    argocd repo add {{ argocd_config_repo }} --username {{ argocd_user }} --password {{ argocd_token }} --upsert
+
+- name: Create app of apps
+  shell: >
+    argocd app create apps
+    --dest-namespace argocd
+    --dest-server https://kubernetes.default.svc
+    --repo {{ argocd_config_repo }}
+    --revision {{ k8s_argocd_branch }}
+    --path argo-apps
+
+- name: Sync app of apps
+  shell: argocd app sync apps
+
+- name: Return default namespace into context
+  shell: |
+    kubectl config set-context --current --namespace=default
+
+- name: Show argocd login information
+  debug:
+    msg:
+    -  "user: admin"
+    -  "password: {{ argo_secret }}"
+    -  "ArgoCD webUI: https://{{ argocd_fqdn }}"
+    -  "ArgoCD gRPC: https://{{ argocd_grpc_fqdn }}"

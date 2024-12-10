@@ -1,0 +1,20 @@
+---
+# Post install Kubernetes changes which are not configurable with kubespray varaiables, controlled with tags:
+  # k8s_afterchanges
+- name: Instaling kubernetes-afterinstallationchanges role
+  hosts: k8s_cluster
+  gather_facts: true
+  roles:
+    - { role: custom_roles/kubernetes/afterinstallationchanges }
+  become: yes
+  become_user: root
+
+# Install ArgoCD on K8S cluster, controlled with tags:
+  # argocd
+- name: Installing argocd role
+  hosts: k8s_cluster
+  gather_facts: true
+  roles:
+    - { role: custom_roles/kubernetes/argocd }
+  become: yes
+  become_user: root
