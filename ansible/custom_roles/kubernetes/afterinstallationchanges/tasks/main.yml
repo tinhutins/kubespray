@@ -1,4 +1,4 @@
 ---
 - import_tasks: k8s-after-installation-changes.yml
-  when: inventory_hostname == groups['kube_control_plane'][0]
+  when: inventory_hostname in groups['kube_control_plane']
   tags: [ 'never', 'k8s_afterchanges' ]
