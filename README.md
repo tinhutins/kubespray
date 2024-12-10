@@ -1,13 +1,14 @@
 How to deploy:
 
 first run provision on all nodes in inventory:
-    ```bash
+    ```
     ansible-playbook -i inventory/inventory_vmware_workstation_local_lab.ini preinstall.yml --tags provision -kK --ask-vault-pass
-
+    '''
 Then create venv in this repo and install requirements:
-    ```bash
+```
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
+'''
 
 then clone kubespray repo and checkout to desirable version also install requirements needed for python/ansible inside this venv: 
     ```bash
