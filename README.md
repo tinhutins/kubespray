@@ -2,7 +2,7 @@ How to deploy:
 
 first run provision on all nodes in inventory:
  ```bash
-    ansible-playbook -i inventory/inventory_vmware_workstation_local_lab.ini preinstall.yml --tags provision -kK --ask-vault-pass
+    ansible-playbook -i clients/tino-prod/inventory.ini ansible/preinstall.yml --tags provision -kK --ask-vault-pass
 ```
 
 Then create venv in this repo and install requirements:
