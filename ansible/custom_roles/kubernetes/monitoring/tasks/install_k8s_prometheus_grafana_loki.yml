@@ -1,0 +1,150 @@
+---
+- name: Gather kubernetes nodes facts
+  setup:
+  delegate_to: "{{item}}"
+  delegate_facts: True
+  with_items:
+    - "{{groups['kube_control_plane']}}"
+    - "{{groups['kube_node']}}"
+
+- name: Create monitoring namespace
+  kubernetes.core.k8s:
+    name: monitoring
+    api_version: v1
+    kind: Namespace
+    state: present
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Create monitoring namespace
+  kubernetes.core.k8s:
+    name: monitoring
+    api_version: v1
+    kind: Namespace
+    state: present
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Delete etcd-client-cert secret
+  kubernetes.core.k8s:
+    name: etcd-client-cert
+    namespace: monitoring
+    api_version: v1
+    kind: secret
+    state: absent
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Create etcd secret
+  shell: |
+    cd /etc/ssl/etcd/ssl
+    kubectl -n monitoring create secret generic etcd-client-cert --from-file=ca.pem=ca.pem  --from-file=ca-key.pem=ca-key.pem
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Add prometheus-community repository
+  kubernetes.core.helm_repository: 
+    name: prometheus-community
+    repo_url: https://prometheus-community.github.io/helm-charts
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Copy prometheus-grafana-alertmanager values.yml to {{ groups['master_nodes'][0] }}
+  template:
+    src: kube-prometheus-stack-values.j2 
+    dest: /tmp/kube-prometheus-stack-values.yml
+    mode: 0744
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Make sure prometheus-community chart is not already present on cluster
+  kubernetes.core.helm:
+    name: monitoring
+    release_namespace: monitoring
+    state: absent
+    wait: true
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+- name: Deploy prometheus-community chart with values loaded from template
+  kubernetes.core.helm:
+    name: monitoring
+    release_namespace: monitoring
+    chart_ref: prometheus-community/kube-prometheus-stack
+    chart_version: 66.3.1
+    values_files: /tmp/kube-prometheus-stack-values.yml
+    update_repo_cache: True
+  when: inventory_hostname in groups['kube_control_plane'][0]
+
+#get metrics from kube-proxy into prometheus
+- name: Use shell module to patch kube-proxy ConfigMap
+  shell: |
+    kubectl get cm/kube-proxy -n kube-system -o yaml > /var/tmp/kube-proxy.yaml
+
+- name: Replace metricsBindAddress
+  replace:
+    path: /var/tmp/kube-proxy.yaml
+    regexp: '(metricsBindAddress:)\s*""'
+    replace: '\1 "0.0.0.0:10249"'
+
+- name: Apply new kube-proxy cm and restart daemonset
+  shell: |
+    kubectl apply -f /var/tmp/kube-proxy.yaml
+    kubectl -n kube-system rollout restart ds kube-proxy
+
+# #loki installation
+# - name: Add loki-grafana repository
+#   kubernetes.core.helm_repository: 
+#     name: grafana
+#     repo_url: https://grafana.github.io/helm-charts
+#     force_update: true
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# - name: Make sure loki chart is not already present on cluster
+#   kubernetes.core.helm:
+#     name: loki
+#     release_namespace: monitoring
+#     state: absent
+#     wait: true
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# - name: Deploy loki-distributed chart
+#   kubernetes.core.helm:
+#     name: loki
+#     release_namespace: monitoring
+#     chart_ref: grafana/loki-distributed
+#     chart_version: 0.78.2
+#     update_repo_cache: True
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# - name: Copy promtail values.yml to {{ groups['master_nodes'][0] }}
+#   template:
+#     src: promtail-loki-values.j2 
+#     dest: /tmp/promtail-loki-values.yml
+#     mode: 0744
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# - name: Deploy promtail-loki chart with values loaded from template
+#   kubernetes.core.helm:
+#     name: promtail
+#     release_namespace: monitoring
+#     chart_ref: grafana/promtail
+#     chart_version: 6.15.5
+#     values_files: /tmp/promtail-loki-values.yml
+#     update_repo_cache: True
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# - name: Delete values.yml on {{ groups['master_nodes'][0] }}
+#   file: 
+#     path: /tmp/values.yml
+#     state: absent
+#   when: inventory_hostname in groups['kube_control_plane'][0]
+
+# Uncomment this part if prometheus needs to be terminated behind the k8s ingress
+- name: Configure prometheus tls certificates
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: prometheus-secret
+        namespace: monitoring
+      type: tls
+      data:
+        tls.crt: "{{ tino_certificate.content | b64encode }}"
+        tls.key: "{{ tino_certificate_key.content | b64encode }}"
+  when: inventory_hostname in groups['kube_control_plane'][0]
