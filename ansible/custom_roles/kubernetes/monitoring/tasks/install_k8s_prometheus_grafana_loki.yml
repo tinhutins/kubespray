@@ -46,7 +46,7 @@
 
 - name: Copy prometheus-grafana-alertmanager values.yml to {{ groups['master_nodes'][0] }}
   template:
-    src: kube-prometheus-stack-values.j2 
+    src: kube-prometheus-stack-values-new.j2 
     dest: /tmp/kube-prometheus-stack-values.yml
     mode: 0744
   when: inventory_hostname in groups['kube_control_plane'][0]
@@ -85,47 +85,47 @@
     kubectl apply -f /var/tmp/kube-proxy.yaml
     kubectl -n kube-system rollout restart ds kube-proxy
 
-# #loki installation
-# - name: Add loki-grafana repository
-#   kubernetes.core.helm_repository: 
-#     name: grafana
-#     repo_url: https://grafana.github.io/helm-charts
-#     force_update: true
-#   when: inventory_hostname in groups['kube_control_plane'][0]
+#loki installation
+- name: Add loki-grafana repository
+  kubernetes.core.helm_repository: 
+    name: grafana
+    repo_url: https://grafana.github.io/helm-charts
+    force_update: true
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
-# - name: Make sure loki chart is not already present on cluster
-#   kubernetes.core.helm:
-#     name: loki
-#     release_namespace: monitoring
-#     state: absent
-#     wait: true
-#   when: inventory_hostname in groups['kube_control_plane'][0]
+- name: Make sure loki chart is not already present on cluster
+  kubernetes.core.helm:
+    name: loki
+    release_namespace: monitoring
+    state: absent
+    wait: true
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
-# - name: Deploy loki-distributed chart
-#   kubernetes.core.helm:
-#     name: loki
-#     release_namespace: monitoring
-#     chart_ref: grafana/loki-distributed
-#     chart_version: 0.78.2
-#     update_repo_cache: True
-#   when: inventory_hostname in groups['kube_control_plane'][0]
+- name: Deploy loki-distributed chart
+  kubernetes.core.helm:
+    name: loki
+    release_namespace: monitoring
+    chart_ref: grafana/loki-distributed
+    chart_version: 0.78.2
+    update_repo_cache: True
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
-# - name: Copy promtail values.yml to {{ groups['master_nodes'][0] }}
-#   template:
-#     src: promtail-loki-values.j2 
-#     dest: /tmp/promtail-loki-values.yml
-#     mode: 0744
-#   when: inventory_hostname in groups['kube_control_plane'][0]
+- name: Copy promtail values.yml to {{ groups['master_nodes'][0] }}
+  template:
+    src: promtail-loki-values.j2 
+    dest: /tmp/promtail-loki-values.yml
+    mode: 0744
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
-# - name: Deploy promtail-loki chart with values loaded from template
-#   kubernetes.core.helm:
-#     name: promtail
-#     release_namespace: monitoring
-#     chart_ref: grafana/promtail
-#     chart_version: 6.15.5
-#     values_files: /tmp/promtail-loki-values.yml
-#     update_repo_cache: True
-#   when: inventory_hostname in groups['kube_control_plane'][0]
+- name: Deploy promtail-loki chart with values loaded from template
+  kubernetes.core.helm:
+    name: promtail
+    release_namespace: monitoring
+    chart_ref: grafana/promtail
+    chart_version: 6.15.5
+    values_files: /tmp/promtail-loki-values.yml
+    update_repo_cache: True
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
 # - name: Delete values.yml on {{ groups['master_nodes'][0] }}
 #   file: 

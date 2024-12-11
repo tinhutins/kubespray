@@ -26,14 +26,14 @@ Run provision on all nodes in inventory, to setup hostname - timezone, etc:
 
  ```bash
     cd ../
-    ansible-playbook -i clients/tino-prod/inventory.ini ansible/preinstall.yml --tags provision -kK --ask-vault-pass
+    ansible-playbook -i clients/tino-prod-v2.25.1/inventory.ini ansible/preinstall.yml --tags provision -kK --ask-vault-pass
 ```
 
 After that c/p our own variables into kubespray/inventory folder and use them instead, for example we add kube-vip, metallb, ingress-nginx, metrics-server...
 
 ```bash
     cd ~/git_folders/kubespray/kubespray/
-    cp -ra ../clients/tino-prod/ inventory/
+    cp -ra ../clients/tino-prod-v2.25.1/ inventory/
 ```
 
 Be careful that we are 1:1 with all default variables for desired kubespray version (use win merge or something and check double changes) - then remove their local and sample inventories and variables when we have our own setup:
@@ -43,7 +43,7 @@ Be careful that we are 1:1 with all default variables for desired kubespray vers
 
 Install k8s with kubespray with our own inventory and variables - installation process takes about ~20minutes on normal network:
 ```bash
-    ansible-playbook -i inventory/tino-prod/inventory.ini cluster.yml --become --become-user=root --ask-vault-pass
+    ansible-playbook -i inventory/tino-prod-v2.25.1/inventory.ini cluster.yml --become --become-user=root --ask-vault-pass
 ```
 
 remove kubespray repo from our base kubespray repo when done - we don't use their files in our repo so it's more clean.
@@ -61,14 +61,40 @@ Manually add kubernetes config into ansible management vm (from which we also ra
 
 When we have access to k8s - install additional custom_roles after kubespray installation:
 ```bash
-    ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags k8s_afterchanges --ask-vault-pass
-    ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_argocd --ask-vault-pass
+    ansible-playbook -i clients/tino-prod-v2.25.1/inventory.ini ansible/postinstall.yml --tags k8s_afterchanges --ask-vault-pass
+    ansible-playbook -i clients/tino-prod-v2.25.1/inventory.ini ansible/postinstall.yml --tags install_argocd --ask-vault-pass
 ```
 
 Deactivate and remove venv from our repo at the end since we don't need ansible anymore:
 ```bash
     deactivate
     rm -rf venv-kubespray/
+```
+
+## Upgrade cluster
+Procedure is almost the same as installing - clone kubespray repo get into new version tag and use our own inventory and variables while matching their template:
+```bash
+    python3 -m venv venv-kubespray
+    source venv-kubespray/bin/activate
+    git clone https://github.com/kubernetes-sigs/kubespray.git
+    cd kubespray
+    git checkout release-2.26
+    git checkout tags/v2.26.0
+    pip install -r requirements.txt
+    ansible --version
+    cp -ra ../clients/tino-prod-v2.26.0/ inventory/
+    rm -rf inventory/local inventory/sample
+    ansible-playbook -i inventory/tino-prod-v2.26.0/inventory.ini -b upgrade-cluster.yml --ask-vault-pass
+```
+
+## Add nodes into cluster
+```bash
+    ansible-playbook -i inventory/tino-prod-v2.26.0/inventory.ini scale.yml --limit="k8s-worker-2"  --ask-vault-pass
+```
+
+## Remove nodes from cluster
+```bash
+    ansible-playbook -i inventory/tino-prod-v2.26.0/inventory.ini remove-node.yml -e node=k8s-worker-2 --ask-vault-pass
 ```
 
 Idea is to have this kind of env at the and with all services around kubespray:

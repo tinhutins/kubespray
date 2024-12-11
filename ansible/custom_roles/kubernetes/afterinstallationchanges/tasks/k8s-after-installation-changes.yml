@@ -7,8 +7,8 @@
       - python3-kubernetes
     state: latest
 
-# Creat secret with Cratis signed certificate and key
-- name: Configure cratis tls certificate
+# Creat secret with  signed certificate and key
+- name: Configure tls certificate
   kubernetes.core.k8s:
     state: present
     definition:
@@ -29,6 +29,7 @@
     template: "templates/{{ item }}"
   with_items:
     - ingress-nginx-svc.j2
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
 # We are changing calico-controller metrics port because alertmanager is listening using port 9094
 # No need for this patch anymore, since metrics_server_container_port is on 4443 (addons.yml)
@@ -39,6 +40,12 @@
 # - name: Calico-kube-controllers deployment restart rollout
 #   shell: |
 #     kubectl -n kube-system rollout restart deployment calico-kube-controllers
+
+#add worker role to worker nodes instead of <none>
+- name: Add a label to the Kubernetes worker nodes
+  shell: kubectl label node {{ item }} node-role.kubernetes.io/worker=worker --overwrite
+  with_items: "{{ groups['kube_node'] }}"
+  when: inventory_hostname in groups['kube_control_plane'][0]
 
 - name: Set kubernetes cluster default namespace to default
   shell: |
