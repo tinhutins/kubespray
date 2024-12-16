@@ -6,9 +6,9 @@
 vault password for ansible is : password
 
 ## Quick Start
-Create venv inside this repo and source into it:
+Clone this repo, create venv inside this repo and source into it:
 ```bash
-    
+    git clone https://github.com/tinhutins/kubespray.git
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
 ```
