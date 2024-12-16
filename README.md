@@ -82,9 +82,11 @@ Deactivate and remove venv from our repo at the end since we don't need ansible 
 ## Upgrade cluster
 Procedure is almost the same as installing - clone kubespray repo get into new version tag and use our own inventory and variables while matching their template:
 ```bash
+    git clone https://github.com/tinhutins/kubespray.git
+    cd kubespray
+    git checkout v2.26.0
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
-    git checkout v2.26.0
     git clone https://github.com/kubernetes-sigs/kubespray.git
     cd kubespray
     git checkout release-2.26
