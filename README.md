@@ -6,16 +6,17 @@
 vault password for ansible is : password
 
 ## Quick Start
-Clone this repo, create venv inside this repo and source into it:
+Clone this repo, go to desired kubespray version - with branches we follow branches, ie. tags of kubespray so for example to install kubernetes version 1.29.10 we would go inside  branch which has variables for that specific version:
 ```bash
     git clone https://github.com/tinhutins/kubespray.git
-    python3 -m venv venv-kubespray
-    source venv-kubespray/bin/activate
+    cd kubespray
+    git checkout v2.25.1
 ```
 
-Inside our repo go to desired kubespray version - with branches we follow branches, ie. tags of kubespray so for example to install kubernetes version 1.29.10 we would go inside this branch which has variables for that specific version:
+create venv inside this repo and source into it:
 ```bash
-    git checkout v2.25.1
+    python3 -m venv venv-kubespray
+    source venv-kubespray/bin/activate
 ```
 
 Then clone kubespray repo, checkout to that desired k8s version also here and install requirements needed for python/ansible inside this venv: 
