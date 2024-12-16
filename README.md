@@ -51,8 +51,7 @@
     ansible-playbook -i inventory/tino-prod/inventory.ini cluster.yml --become --become-user=root --ask-vault-pass
 ```
 
-8. Clean Up - Once installation is complete, remove the Kubespray repo from your base setup:
-   Only when needed for install/modify/upgrade kubespray then clone it back into repo and always delete after finishing!
+8. Clean Up - Once installation is complete, remove the Kubespray repo from your base setup. Only when needed for example to modify or upgrade kubespray then clone it back into our repo and always delete after finishing!
 ```bash
     cd ../
     rm -rf kubespray/
@@ -78,7 +77,7 @@
 ```
 
 ## Upgrade cluster
-Upgrading the cluster follows a similar process to installation. Just update to a newer version of Kubespray:
+Upgrading the cluster follows a similar process to installation. Just update to a newer version of Kubespray - Upgrade process takes about ~30minutes on normal network:
 ```bash
     git clone https://github.com/tinhutins/kubespray.git
     cd kubespray
@@ -94,6 +93,9 @@ Upgrading the cluster follows a similar process to installation. Just update to 
     cp -ra ../clients/tino-prod/ inventory/
     rm -rf inventory/local inventory/sample
     ansible-playbook -i inventory/tino-prod/inventory.ini -b upgrade-cluster.yml --ask-vault-pass
+    deactivate
+    cd ..
+    rm -rf kubespray venv-kubespray
 ```
 
 ## Add nodes into cluster
