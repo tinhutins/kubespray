@@ -1,4 +1,0 @@
----
-- import_tasks: argocd-install.yml
-  when: inventory_hostname in groups['kube_control_plane'][0]
-  tags: [ 'never', 'install_argocd' ]
