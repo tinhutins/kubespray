@@ -1,7 +1,19 @@
+# Kubespray Kubernetes Ecosystem Automation with Ansible
+
+This project automates the creation of a complete Kubernetes ecosystem using Kubespray and Ansible. It includes setting up a High Availability (HA) Kubernetes cluster with essential services and tools for managing and deploying applications.
+
 ## Prerequisites
 
-- At least 4 virtual machines running the latest Ubuntu 24.04 (tested version).
-- Ansible Vault password is : password
+- At least 4 virtual machines running Ubuntu 24.04.
+- Ansible Vault password: `password`.
+- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh).
+
+## Features
+
+- **Kubernetes HA Cluster**: Provisioned using Kubespray.
+- **MetalLB**: Provides load balancing for services.
+- **Ingress-NGINX**: Manages HTTP and HTTPS traffic.
+- **Persistent Storage**: Longhorn is used for storage solutions.
 
 ## Quick Start
 1. Clone this repo, checkout to a specific Kubernetes version, with branches we follow branches, ie. tags of kubespray:
