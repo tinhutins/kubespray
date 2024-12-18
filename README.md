@@ -76,9 +76,10 @@ This project automates the creation of a complete Kubernetes ecosystem using Kub
     kubectl get nodes
 ```
 
-10. Post-Install Configuration - After Kubernetes is up and running, install additional custom roles (like ArgoCD):
+10. Post-Install Configuration - After Kubernetes is up and running, install additional custom roles (like Longhorn and ArgoCD):
 ```bash
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags k8s_afterchanges --ask-vault-pass
+    ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_longhorn --ask-vault-pass
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_argocd --ask-vault-pass
 ```
 
