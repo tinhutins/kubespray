@@ -91,21 +91,30 @@ This project automates the creation of a complete Kubernetes ecosystem using Kub
 
 ## Upgrade cluster
 Upgrading the cluster follows a similar process to installation. Just update to a newer version of Kubespray - Upgrade process takes about ~30minutes on normal network:
+
+## Prerequisites
+Create a new branch for this new version of kubernetes if it doesn't exists:
+```bash
+    git checkout -b v2.27.0
+```
+Then copy all files from previous branch into this new one (using vscode or linux cp).
+
+After that run following commands for update:
+
 ```bash
     git clone https://github.com/tinhutins/kubespray.git
     cd kubespray
-    # then use one of next two commands based on which version are you upgrading (new defined in git or totally new which is still not defined)
-    git checkout v2.26.0 # Example for new Kubernetes version already defined in git
-    git checkout -b v2.27.0 # Example for new Kubernetes version NOT defined in git.
+    git checkout v2.27.0 # checkout to new Kubernetes version in our repo
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
     git clone https://github.com/kubernetes-sigs/kubespray.git
-    cd kubespray
-    git checkout release-2.(new_release_number --> for example 26)
-    git checkout tags/v2.(new_release_tag_number --> for example 26.0)
+    cd kubespray 
+    git checkout release-2.(new_release_number --> for example 27) # checkout to new Kubernetes version in kubespray repo
+    git checkout tags/v2.(new_release_tag_number --> for example 27.0) # checkout to new Kubernetes version tag in kubespray repo
     pip install -r requirements.txt
     ansible --version
     cp -ra ../clients/tino-prod/ inventory/
+    # Ensure the variables match the Kubespray version you're using (check for duplicate or conflicting changes). After that remove the sample and local inventory files:
     rm -rf inventory/local inventory/sample
     ansible-playbook -i inventory/tino-prod/inventory.ini -b upgrade-cluster.yml --ask-vault-pass
     deactivate
