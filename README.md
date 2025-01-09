@@ -1,22 +1,30 @@
 # Kubespray Kubernetes Ecosystem Automation with Ansible
 
-This project automates the creation of a complete Kubernetes ecosystem using Kubespray and Ansible. It includes setting up a High Availability (HA) Kubernetes cluster with essential services and tools for managing and deploying applications.
+This project automates the creation of a complete Kubernetes ecosystem using Kubespray and Ansible. 
+It includes setting up a High Availability (HA) Kubernetes cluster with essential services and tools for managing and deploying applications.
+
+## Features
+
+- **Kubernetes HA Cluster**: Provisioned using Kubespray and kube-vip.
+- **MetalLB**: Provides load balancing for services.
+- **Ingress-NGINX**: Manages HTTP and HTTPS traffic.
+- **Persistent Storage**: Longhorn is used for storage solutions.
 
 ## Prerequisites
 
 - At least 4 virtual machines running Ubuntu 24.04.
 - Ansible Vault password: `password`.
 - Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh).
+- Resource Recommendations: Each VM should have at least 2 CPUs, 2GB RAM, and 20GB disk space.
 
-## Features
+## Additional notes 
 
-- **Kubernetes HA Cluster**: Provisioned using Kubespray.
-- **MetalLB**: Provides load balancing for services.
-- **Ingress-NGINX**: Manages HTTP and HTTPS traffic.
-- **Persistent Storage**: Longhorn is used for storage solutions.
+- Always validate the compatibility of variables and customizations with the specific version of Kubespray you're using.
+- For more details on Kubespray, refer to the Kubespray documentation [https://github.com/kubernetes-sigs/kubespray].
+- Ensure regular backups before performing upgrades or scaling operations to avoid data loss.
 
 ## Quick Start
-1. Clone this repo, checkout to a specific Kubernetes version, with branches we follow branches, ie. tags of kubespray:
+1. Clone this repository and switch to the branch that corresponds to the desired Kubespray Kubernetes version. With branches we follow branches, ie. tags of kubespray official repo:
 ```bash
     git clone https://github.com/tinhutins/kubespray.git
     cd kubespray
@@ -29,94 +37,102 @@ This project automates the creation of a complete Kubernetes ecosystem using Kub
     source venv-kubespray/bin/activate
 ```
 
-3. Clone the official Kubespray repo, check out the version tag, and install dependencies:
+3. Clone the Official Kubespray Repository and Install Dependencies - Clone the official Kubespray repo, check out the version tag, and install dependencies:
 ```bash
     git clone https://github.com/kubernetes-sigs/kubespray.git
     cd kubespray
+    # Example: Checkout release and tag for Kubernetes v1.29.10
     git checkout release-2.25
     git checkout tags/v2.25.1
     pip install -r requirements.txt
     ansible --version
 ```
 
-4. Run the provision playbook to set up hostnames, timezones, and other system configurations on desired nodes:
+4. Provision the Nodes - Run the pre-installation playbook to configure system settings like hostnames, timezones, and prerequisites on the target nodes:
 
  ```bash
     cd ../
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/preinstall.yml --tags provision -kK --ask-vault-pass
 ```
 
-5. Copy your custom variables into the Kubespray inventory directory:
+5. Copy Custom Inventory Variables - Copy your custom inventory variables into the Kubespray inventory directory to ensure consistency:
 
 ```bash
     cd ~/git_folders/kubespray/kubespray/
     cp -ra ../clients/tino-prod/ inventory/
 ```
 
-6. Ensure the variables match the Kubespray version you're using (check for duplicate or conflicting changes). After that remove the sample and local inventory files:
+6. Setup Custom Inventory Variables - Ensure the variables values match the Kubespray version you're using (check for duplicate or conflicting changes). After that remove the sample and local inventory files:
 ```bash
     rm -rf inventory/local inventory/sample
 ```
 
-7. Install Kubernetes using your custom inventory and variables. Installation process takes about ~25minutes on normal network:
+7. Install Kubernetes Cluster - Run the installation playbook to deploy Kubernetes using your custom inventory and variables. This process takes around 25 minutes under normal network conditions:
 ```bash
     ansible-playbook -i inventory/tino-prod/inventory.ini cluster.yml --become --become-user=root --ask-vault-pass
 ```
 
-8. Clean Up - Once installation is complete, remove the Kubespray repo from your base setup. Only when needed for example to modify or upgrade kubespray then clone it back into our repo and always delete after finishing!
+8. Post-Installation Cleanup - Remove the Kubespray repository after installation to maintain a clean setup. You can clone it back later if needed for updates or modifications:
 ```bash
     cd ../
     rm -rf kubespray/
 ```
 
-9. Access Kubernetes - Copy the Kubernetes config from the first master node to your management VM:
+9. Access the Kubernetes Cluster - Copy the Kubernetes configuration file from the first master node to your management machine and verify the cluster status:
 
 ```bash
     scp -r [first-master-node-ip]:/etc/kubernetes/admin.conf /root/.kube/config
     kubectl get nodes
 ```
 
-10. Post-Install Configuration - After Kubernetes is up and running, install additional custom roles (like Longhorn and ArgoCD):
+10. Post-Install Configuration - Install additional tools and custom roles, such as Longhorn and ArgoCD, to enhance the cluster functionality:
 ```bash
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags k8s_afterchanges --ask-vault-pass
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_longhorn --ask-vault-pass
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_argocd --ask-vault-pass
 ```
 
-11. Clean Up Virtual Environment - Once done, deactivate and remove the virtual environment:
+11. Clean Up Virtual Environment - Deactivate and remove the Python virtual environment after completing the setup:
 ```bash
     deactivate
     rm -rf venv-kubespray/
 ```
 
 ## Upgrade cluster
-Upgrading the cluster follows a similar process to installation. Just update to a newer version of Kubespray - Upgrade process takes about ~30minutes on normal network:
+To upgrade the cluster, update the Kubespray repository to a newer version. The process takes approximately 30 minutes under normal network conditions.
 
 ## Prerequisites
-Create a new branch for this new version of kubernetes if it doesn't exists:
+Create a new branch for this new version of kubernetes if it doesn't exists or just checkout to that branch if already defined:
 ```bash
     git checkout -b v2.27.0
+    #if already created
+    git checkout v2.27.0
 ```
-Then copy all files from previous branch into this new one (using vscode or linux cp).
+Afterwards copy all files from previous branch into this new one (using vscode cp or directly with linux cp).
+```bash
+    cp -r ../previous-branch/* .
+```
 
-After that run following commands for update:
+After that run following commands for upgrading k8s:
 
 ```bash
     git clone https://github.com/tinhutins/kubespray.git
     cd kubespray
-    git checkout v2.27.0 # checkout to new Kubernetes version in our repo
+    git checkout v2.27.0 # checkout to new branch which has new Kubernetes version in our repo
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
     git clone https://github.com/kubernetes-sigs/kubespray.git
     cd kubespray 
-    git checkout release-2.(new_release_number --> for example 27) # checkout to new Kubernetes version in kubespray repo
-    git checkout tags/v2.(new_release_tag_number --> for example 27.0) # checkout to new Kubernetes version tag in kubespray repo
+    git checkout release-2.27 # checkout to new Kubernetes release in kubespray repo
+    git checkout tags/v2.27.0 # checkout to new Kubernetes tag in kubespray repo
     pip install -r requirements.txt
     ansible --version
+    #Setup Custom Inventory Variables - Ensure the variables values match the Kubespray version you're using (check for duplicate or conflicting changes). 
     cp -ra ../clients/tino-prod/ inventory/
-    # Ensure the variables match the Kubespray version you're using (check for duplicate or conflicting changes). After that remove the sample and local inventory files:
+    # After that remove the sample and local inventory files:
     rm -rf inventory/local inventory/sample
     ansible-playbook -i inventory/tino-prod/inventory.ini -b upgrade-cluster.yml --ask-vault-pass
+    #Post-Upgrade Cleanup
     deactivate
     cd ..
     rm -rf kubespray venv-kubespray
@@ -137,3 +153,4 @@ To remove a node from the cluster:
 Idea is to have this kind of env at the and with all services around kubespray:
 
 ![alt text](./tino-external-iac.jpeg?raw=true "Tino - Kubernetes Enviroment")
+
