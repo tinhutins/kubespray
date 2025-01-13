@@ -58,6 +58,7 @@ It includes setting up a High Availability (HA) Kubernetes cluster with essentia
 5. Copy Custom Inventory Variables - Copy your custom inventory variables into the Kubespray inventory directory to ensure consistency:
 
 ```bash
+    #cd into kubespray official repo and copy our inv variables inside their inventory folder
     cd ~/git_folders/kubespray/kubespray/
     cp -ra ../clients/tino-prod/ inventory/
 ```
@@ -108,17 +109,13 @@ Create a new branch for this new version of kubernetes if it doesn't exists or j
     #if already created
     git checkout v2.27.0
 ```
-Afterwards copy all files from previous branch into this new one (using vscode cp or directly with linux cp).
-```bash
-    cp -r ../previous-branch/* .
-```
+Afterwards ensure all files are copied from k8s previous branch into this new one (using vscode cp or directly with linux cp).
 
-After that run following commands for upgrading k8s:
+
+Then run following commands for upgrading k8s:
 
 ```bash
-    git clone https://github.com/tinhutins/kubespray.git
-    cd kubespray
-    git checkout v2.27.0 # checkout to new branch which has new Kubernetes version in our repo
+    git checkout v2.27.0 # if not already, checkout to new branch which has new Kubernetes version in our repo
     python3 -m venv venv-kubespray
     source venv-kubespray/bin/activate
     git clone https://github.com/kubernetes-sigs/kubespray.git
