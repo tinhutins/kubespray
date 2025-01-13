@@ -5,10 +5,10 @@ Then use that crt for all the publicly exposed apps through k8s ingress
 
 how to use script for generating self-signed cert :
 
-./ssl-wildcard.sh "desired domain name"
+./create_self_signed_wildcard_cert/ssl-wildcard.sh "desired domain name"
 
 example:
-./ssl-wildcard.sh tinotest.com
+./create_self_signed_wildcard_cert/ssl-wildcard.sh "tinotest.com"
 
 
 then put crt and key files into appropriate vault for example here:
