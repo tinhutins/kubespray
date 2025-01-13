@@ -1,6 +1,0 @@
----
-#with this we can install full monitoring solution and also add grafana-loki for logs observing in k8s
-#https://anaisurl.com/full-tutorial-monitoring/
-- import_tasks: install_k8s_prometheus_grafana_loki.yml
-  when: inventory_hostname in groups['kube_control_plane'][0]
-  tags: [ 'never', 'install_k8s_prometheus_grafana_loki' ]
