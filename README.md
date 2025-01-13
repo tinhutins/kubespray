@@ -14,7 +14,7 @@ It includes setting up a High Availability (HA) Kubernetes cluster with essentia
 
 - At least 4 virtual machines running Ubuntu 24.04.
 - Ansible Vault password: `password`.
-- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh).
+- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh) located in branch gen-crt.
 - Resource Recommendations: Each VM should have at least 2 CPUs, 2GB RAM, and 20GB disk space.
 
 ## Additional notes 
