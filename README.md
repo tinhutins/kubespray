@@ -144,7 +144,7 @@ To add a new node to the cluster:
 ## Remove nodes from cluster
 To remove a node from the cluster:
 ```bash
-    ansible-playbook -i inventory/tino-prod/inventory.ini remove-node.yml -e node="k8s-worker-2"--ask-vault-pass
+    ansible-playbook -i inventory/tino-prod/inventory.ini remove-node.yml -e node="k8s-worker-2" --ask-vault-pass
 ```
 
 Idea is to have this kind of env at the and with all services around kubespray:
