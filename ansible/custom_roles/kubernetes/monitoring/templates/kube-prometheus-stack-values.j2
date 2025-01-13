@@ -1,54 +1,36 @@
-# ## Deploy a Prometheus instance
-# ##
-# prometheus:
-#   enabled: true
-#   ingress:
-#     enabled: true
-#     annotations:
-#       kubernetes.io/ingress.allow-http: "true"
-#       kubernetes.io/ingress.class: nginx
-#     hosts:
-#       - {{prometheus_fqdn}}
-#   ## Settings affecting prometheusSpec
-#   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
-#   ##
-#   prometheusSpec:
-#     ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
-#     ## prometheus resource to be created with selectors based on values in the helm deployment,
-#     ## which will also match the servicemonitors created
-#     ##
-#     serviceMonitorSelectorNilUsesHelmValues: false
-#     serviceMonitorSelector: {}
-#     serviceMonitorNamespaceSelector: {}
-#     ## How long to retain metrics
-#     ##
-#     retention: 3d
-#     scrapeInterval: "15s"
-#     evaluation_interval: "15s"
-#     secrets:
-#     - etcd-client-cert
-
-# kubeEtcd:
-#   enabled: true
-#   service:
-#     port: 2379
-#     targerPort: 2379
-#   endpoints:
-# {% for server in groups['kube_control_plane'] %}
-#     - {{hostvars[server]['ansible_facts']['default_ipv4']['address']}}
-# {% endfor %}
-#   serviceMonitor:
-#     scheme: https
-#     insecureSkipVerify: true
-#     certFile: /etc/prometheus/secrets/etcd-client-cert/ca.pem
-#     keyFile: /etc/prometheus/secrets/etcd-client-cert/ca-key.pem
+## Deploy a Prometheus instance
+##
+prometheus:
+  enabled: true
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.allow-http: "true"
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - {{prometheus_fqdn}}
+  ## Settings affecting prometheusSpec
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  ##
+  prometheusSpec:
+    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the servicemonitors created
+    ##
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    ## How long to retain metrics
+    ##
+    retention: 3d
+    scrapeInterval: "15s"
+    evaluation_interval: "15s"
+    secrets:
+    - etcd-client-cert
 
 ## Deploy a Grafana instance
 ##
 grafana:
-  serviceMonitor: 
-    labels:
-      release: monitoring
   enabled: true
   adminPassword: admin
   ingress:
@@ -74,10 +56,10 @@ grafana:
   sidecar:
     datasources:
       defaultDatasourceEnabled: true
-  # additionalDataSources:
-  #   - name: Loki
-  #     type: loki
-  #     url: http://loki-loki-distributed-query-frontend.monitoring:3100
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki-loki-distributed-query-frontend.monitoring:3100
 
 ## ref: https://prometheus.io/docs/alerting/alertmanager/
 ##
@@ -103,253 +85,19 @@ alertmanager:
     ##
     retention: 120h
 
-namespaceOverride: monitoring
-defaultRules:
-  create: false
-kube-state-metrics:
-  namespaceOverride: monitoring
-  prometheus:
-    monitor:
-      enabled: true
-      additionalLabels:
-        release: prometheus
-kubeStateMetrics:
-  enabled: true
-kubeControllerManager:
-  enabled: true
-kubeProxy:
-  enabled: false
-kubeScheduler:
-  enabled: true
-kubeApiserver:
-  enabled: true
-# alertmanager:
-#   enabled: false
-# grafana:
-#   enabled: false
 kubeEtcd:
   enabled: true
   service:
     port: 2379
     targerPort: 2379
   endpoints:
-{% for server in groups['etcd'] %}
+{% for server in groups['kube_control_plane'] %}
     - {{hostvars[server]['ansible_facts']['default_ipv4']['address']}}
 {% endfor %}
   serviceMonitor:
-    scheme: https
-    insecureSkipVerify: true
-    certFile: /etc/prometheus/secrets/etcd-client-cert/ca.pem
-    keyFile: /etc/prometheus/secrets/etcd-client-cert/ca-key.pem
-nodeExporter:
-  enabled: true
-kubelet:
-  enabled: true
-  serviceMonitor:
-    cAdvisor: false
-    cAdvisorMetricRelabelings:
-      # Drop less useful container CPU metrics.
-      - sourceLabels: [__name__]
-        action: drop
-        regex: 'container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)'
-      # Drop less useful container / always zero filesystem metrics.
-      - sourceLabels: [__name__]
-        action: drop
-        regex: 'container_fs_(io_current|io_time_seconds_total|io_time_weighted_seconds_total|reads_merged_total|sector_reads_total|sector_writes_total|writes_merged_total)'
-      # Drop less useful / always zero  container memory metrics.
-      - sourceLabels: [__name__]
-        action: drop
-        regex: 'container_memory_(mapped_file|swap)'
-      # Drop less useful container process metrics.
-      - sourceLabels: [__name__]
-        action: drop
-        regex: 'container_(file_descriptors|tasks_state|threads_max)'
-      # Drop container spec metrics that overlap with kube-state-metrics.
-      - sourceLabels: [__name__]
-        action: drop
-        regex: 'container_spec.*'
-      # Drop cgroup metrics with no pod.
-      - sourceLabels: [id, pod]
-        action: drop
-        regex: '.+;'
-      # Drop cgroup metrics with no container.
-      - sourceLabels: [id, container]
-        action: drop
-        regex: '.+;'
-prometheus-node-exporter:
-  namespaceOverride: ""
-  podLabels:
-    ## Add the 'node-exporter' label to be used by serviceMonitor to match standard common usage in rules and grafana dashboards
-    ##
-    jobLabel: node-exporter
-  releaseLabel: true
-  extraArgs:
-    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
-    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
-  service:
-    portName: http-metrics
-  prometheus:
-    monitor:
-      enabled: true
-      jobLabel: node-exporter
-      interval: ""
-      scrapeTimeout: ""
-      proxyUrl: ""
-      metricRelabelings: []
-      relabelings: 
-      - sourceLabels: [__meta_kubernetes_pod_node_name]
-        separator: ;
-        regex: ^(.*)$
-        targetLabel: instance
-        replacement: $1
-        action: replace
-      - sourceLabels: [__meta_kubernetes_pod_cluster_name ]
-        targetLabel: job
-        replacement: $1
-        action: replace
-  rbac:
-    pspEnabled: false
-prometheus:
-  ingress:
-    enabled: true
-    ingressClassName: nginx
-    hosts:
-      - {{ prometheus_fqdn }}
-    tls:
-      - secretName: prometheus-secret
-        hosts:
-          - {{ prometheus_fqdn }}
-  prometheusSpec:
-    retention: 0d
-    scrapeInterval: "30s"
-    evaluation_interval: "30s"
-    secrets:
-    - etcd-client-cert
-    externalLabels: {cluster: {{ cluster_name }}}
-    additionalScrapeConfigs: 
-    - job_name: 'kubernetes-cadvisor'
-      honor_labels: true
-      honor_timestamps: true
-      scrape_interval: 30s
-      scrape_timeout: 10s
-      metrics_path: /metrics/cadvisor
-      scheme: https
-      authorization:
-        type: Bearer
-        credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      tls_config:
-        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        insecure_skip_verify: true
-      follow_redirects: true
-      enable_http2: true
-      relabel_configs:
-      - source_labels: [job]
-        separator: ;
-        regex: (.*)
-        target_label: __tmp_prometheus_job_name
-        replacement: $1
-        action: replace
-      - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
-        separator: ;
-        regex: kubelet
-        replacement: $1
-        action: keep
-      - source_labels: [__meta_kubernetes_service_label_k8s_app]
-        separator: ;
-        regex: kubelet
-        replacement: $1
-        action: keep
-      - source_labels: [__meta_kubernetes_endpoint_port_name]
-        separator: ;
-        regex: https-metrics
-        replacement: $1
-        action: keep
-      - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-        separator: ;
-        regex: Node;(.*)
-        target_label: node
-        replacement: ${1}
-        action: replace
-      - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-        separator: ;
-        regex: Pod;(.*)
-        target_label: pod
-        replacement: ${1}
-        action: replace
-      - source_labels: [__meta_kubernetes_namespace]
-        separator: ;
-        regex: (.*)
-        target_label: namespace
-        replacement: $1
-        action: replace
-      - source_labels: [__meta_kubernetes_service_name]
-        separator: ;
-        regex: (.*)
-        target_label: service
-        replacement: $1
-        action: replace
-      - source_labels: [__meta_kubernetes_pod_name]
-        separator: ;
-        regex: (.*)
-        target_label: pod
-        replacement: $1
-        action: replace
-      - source_labels: [__meta_kubernetes_pod_container_name]
-        separator: ;
-        regex: (.*)
-        target_label: container
-        replacement: $1
-        action: replace
-      - separator: ;
-        regex: (.*)
-        target_label: endpoint
-        replacement: https-metrics
-        action: replace
-      - source_labels: [__metrics_path__]
-        separator: ;
-        regex: (.*)
-        target_label: metrics_path
-        replacement: $1
-        action: replace
-      - source_labels: [__address__]
-        separator: ;
-        regex: (.*)
-        modulus: 1
-        target_label: __tmp_hash
-        replacement: $1
-        action: hashmod
-      - source_labels: [__tmp_hash]
-        separator: ;
-        regex: "0"
-        replacement: $1
-        action: keep
-      kubernetes_sd_configs:
-      - role: endpoints
-        kubeconfig_file: ""
-        follow_redirects: true
-        namespaces:
-          names:
-          - kube-system
-    - job_name: 'ingress-nginx-endpoints'
-      kubernetes_sd_configs:
-      - role: pod
-        namespaces:
-          names:
-          - ingress-nginx
-      scheme: http
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: /metrics
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        target_label: __address__
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-      - source_labels: [__meta_kubernetes_service_name]
-        regex: monitoring-kube-prometheus-prometheus
-        action: drop
+   scheme: https
+   insecureSkipVerify: false
+   serverName: localhost
+   caFile: /etc/prometheus/secrets/etcd-client-cert/ca.crt
+   certFile: /etc/prometheus/secrets/etcd-client-cert/healthcheck-client.crt
+   keyFile: /etc/prometheus/secrets/etcd-client-cert/healthcheck-client.key

@@ -4,16 +4,7 @@
   delegate_to: "{{item}}"
   delegate_facts: True
   with_items:
-    - "{{groups['kube_control_plane']}}"
-    - "{{groups['kube_node']}}"
-
-- name: Create monitoring namespace
-  kubernetes.core.k8s:
-    name: monitoring
-    api_version: v1
-    kind: Namespace
-    state: present
-  when: inventory_hostname in groups['kube_control_plane'][0]
+    - "{{groups['k8s_cluster']}}"
 
 - name: Create monitoring namespace
   kubernetes.core.k8s:
@@ -44,9 +35,9 @@
     repo_url: https://prometheus-community.github.io/helm-charts
   when: inventory_hostname in groups['kube_control_plane'][0]
 
-- name: Copy prometheus-grafana-alertmanager values.yml to {{ groups['master_nodes'][0] }}
+- name: Copy prometheus-grafana-alertmanager values.yml to {{ groups['kube_control_plane'][0] }}
   template:
-    src: kube-prometheus-stack-values-new.j2 
+    src: kube-prometheus-stack-values.j2 
     dest: /tmp/kube-prometheus-stack-values.yml
     mode: 0744
   when: inventory_hostname in groups['kube_control_plane'][0]
@@ -64,7 +55,7 @@
     name: monitoring
     release_namespace: monitoring
     chart_ref: prometheus-community/kube-prometheus-stack
-    chart_version: 66.3.1
+    chart_version: 56.4.0
     values_files: /tmp/kube-prometheus-stack-values.yml
     update_repo_cache: True
   when: inventory_hostname in groups['kube_control_plane'][0]
@@ -110,7 +101,7 @@
     update_repo_cache: True
   when: inventory_hostname in groups['kube_control_plane'][0]
 
-- name: Copy promtail values.yml to {{ groups['master_nodes'][0] }}
+- name: Copy promtail values.yml to {{ groups['kube_control_plane'][0] }}
   template:
     src: promtail-loki-values.j2 
     dest: /tmp/promtail-loki-values.yml
@@ -127,24 +118,24 @@
     update_repo_cache: True
   when: inventory_hostname in groups['kube_control_plane'][0]
 
-# - name: Delete values.yml on {{ groups['master_nodes'][0] }}
+# - name: Delete values.yml on {{ groups['kube_control_plane'][0] }}
 #   file: 
 #     path: /tmp/values.yml
 #     state: absent
 #   when: inventory_hostname in groups['kube_control_plane'][0]
 
-# Uncomment this part if prometheus needs to be terminated behind the k8s ingress
-- name: Configure prometheus tls certificates
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: prometheus-secret
-        namespace: monitoring
-      type: tls
-      data:
-        tls.crt: "{{ tino_certificate.content | b64encode }}"
-        tls.key: "{{ tino_certificate_key.content | b64encode }}"
-  when: inventory_hostname in groups['kube_control_plane'][0]
+# # Uncomment this part if prometheus needs to be terminated behind the k8s ingress
+# - name: Configure prometheus tls certificates
+#   kubernetes.core.k8s:
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Secret
+#       metadata:
+#         name: prometheus-secret
+#         namespace: monitoring
+#       type: tls
+#       data:
+#         tls.crt: "{{ cratis_certificate.content | b64encode }}"
+#         tls.key: "{{ cratis_certificate_key.content | b64encode }}"
+#   when: inventory_hostname in groups['kube_control_plane'][0]
