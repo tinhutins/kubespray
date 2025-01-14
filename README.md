@@ -89,14 +89,7 @@ Run the installation playbook to deploy Kubernetes using your custom inventory a
     ansible-playbook -i inventory/tino-prod/inventory.ini cluster.yml --become --become-user=root --ask-vault-pass
 ```
 
-#### 8. Post-Installation Cleanup
-Remove the Kubespray repository after installation to maintain a clean setup. You can clone it back later if needed for updates or modifications:
-```bash
-    cd ../
-    rm -rf kubespray/
-```
-
-#### 9. Access the Kubernetes Cluster
+#### 8. Access the Kubernetes Cluster
 Copy the Kubernetes configuration file from the first master node to your management machine and verify the cluster status:
 
 ```bash
@@ -104,19 +97,21 @@ Copy the Kubernetes configuration file from the first master node to your manage
     kubectl get nodes
 ```
 
-#### 10. Post-Install Configuration
-Install additional tools and custom roles, such as Longhorn and ArgoCD, to enhance the cluster functionality:
+#### 9. Post-Install Configuration
+Install additional tools and custom roles, such as Longhorn, monitoring stack and ArgoCD, to enhance the cluster functionality:
 ```bash
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags k8s_afterchanges --ask-vault-pass
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_longhorn --ask-vault-pass
     ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_argocd --ask-vault-pass
+    ansible-playbook -i clients/tino-prod/inventory.ini ansible/postinstall.yml --tags install_k8s_prometheus_grafana_loki --ask-vault-pass
 ```
 
-#### 11. Clean Up Virtual Environment
-Deactivate and remove the Python virtual environment after completing the setup:
+#### 10. Post-Installation Cleanup
+Deactivate and remove the Python virtual environment also remove the official Kubespray repository after installation to maintain a clean setup.
 ```bash
+    cd ../
     deactivate
-    rm -rf venv-kubespray/
+    rm -rf kubespray/ venv-kubespray/
 ```
 
 ---
@@ -154,7 +149,7 @@ Afterwards ensure all files are copied from k8s previous branch into this new on
     #Post-Upgrade Cleanup
     deactivate
     cd ..
-    rm -rf kubespray venv-kubespray
+    rm -rf kubespray/ venv-kubespray/
 ```
 ---
 
