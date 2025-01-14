@@ -3,6 +3,19 @@
 This project automates the creation of a complete Kubernetes ecosystem using Kubespray and Ansible. 
 It includes setting up a High Availability (HA) Kubernetes cluster with essential services and tools for managing and deploying applications.
 
+---
+
+## Prerequisites
+
+- **Virtual Machines:** At least 4 VMs running Ubuntu 24.04 with the following minimum specs:
+  - 2 CPUs
+  - 2GB RAM
+  - 20GB disk space
+- **Ansible Vault Password:** `password`.
+- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh) located in branch gen-crt.
+
+---
+
 ## Features
 
 - **Kubernetes HA Cluster**: Provisioned using Kubespray and kube-vip.
@@ -10,18 +23,15 @@ It includes setting up a High Availability (HA) Kubernetes cluster with essentia
 - **Ingress-NGINX**: Manages HTTP and HTTPS traffic.
 - **Persistent Storage**: Longhorn is used for storage solutions.
 
-## Prerequisites
-
-- At least 4 virtual machines running Ubuntu 24.04.
-- Ansible Vault password: `password`.
-- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh) located in branch gen-crt.
-- Resource Recommendations: Each VM should have at least 2 CPUs, 2GB RAM, and 20GB disk space.
+---
 
 ## Additional notes 
 
 - Always validate the compatibility of variables and customizations with the specific version of Kubespray you're using.
 - For more details on Kubespray, refer to the Kubespray documentation [https://github.com/kubernetes-sigs/kubespray].
 - Ensure regular backups before performing upgrades or scaling operations to avoid data loss.
+
+---
 
 ## Quick Start
 1. Clone this repository and switch to the branch that corresponds to the desired Kubespray Kubernetes version. With branches we follow branches, ie. tags of kubespray official repo:
@@ -134,6 +144,7 @@ Then run following commands for upgrading k8s:
     cd ..
     rm -rf kubespray venv-kubespray
 ```
+---
 
 ## Add nodes into cluster
 To add a new node to the cluster:
@@ -141,11 +152,16 @@ To add a new node to the cluster:
     ansible-playbook -i inventory/tino-prod/inventory.ini scale.yml --limit="k8s-worker-2"  --ask-vault-pass
 ```
 
+---
+
 ## Remove nodes from cluster
 To remove a node from the cluster:
 ```bash
     ansible-playbook -i inventory/tino-prod/inventory.ini remove-node.yml -e node="k8s-worker-2" --ask-vault-pass
 ```
+
+
+---
 
 Idea is to have this kind of env at the and with all services around kubespray:
 
