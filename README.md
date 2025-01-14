@@ -129,7 +129,7 @@ Create a new branch for this new version of kubernetes if it doesn't exists or j
 Afterwards ensure all files are copied from k8s previous branch into this new one (using vscode cp or directly with linux cp).
 
 
-#### run following commands for upgrading k8s:
+#### Run following commands for upgrading k8s:
 
 ```bash
     git checkout v2.27.0 # if not already, checkout to new branch which has new Kubernetes version in our repo
@@ -153,7 +153,7 @@ Afterwards ensure all files are copied from k8s previous branch into this new on
 ```
 ---
 
-## Add nodes into cluster
+## Add nodes into the cluster
 To add a new node to the cluster:
 ```bash
     ansible-playbook -i inventory/tino-prod/inventory.ini scale.yml --limit="k8s-worker-2"  --ask-vault-pass
@@ -161,7 +161,7 @@ To add a new node to the cluster:
 
 ---
 
-## Remove nodes from cluster
+## Remove nodes from the cluster
 To remove a node from the cluster:
 ```bash
     ansible-playbook -i inventory/tino-prod/inventory.ini remove-node.yml -e node="k8s-worker-2" --ask-vault-pass
