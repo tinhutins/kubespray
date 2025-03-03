@@ -1,4 +1,4 @@
 ---
 - import_tasks: longhorn-storage-install.yml
-  when: inventory_hostname in groups['master_nodes'][0]
+  when: inventory_hostname in groups['kube_control_plane'][0]
   tags: [ 'never', 'install_longhorn' ]
