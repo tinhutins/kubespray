@@ -5,3 +5,6 @@ prometheus_fqdn: tino-prometheus.tinotest.com
 grafana_fqdn: tino-grafana.tinotest.com
 alertmanager_fqdn: tino-alertmanager.tinotest.com
 
+#storage
+longhorn_chart_version: 1.7.2
+longhorn_ingress: tino-longhorn.tinotest.com
