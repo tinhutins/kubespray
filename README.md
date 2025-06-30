@@ -12,8 +12,9 @@ It includes setting up a High Availability (HA) Kubernetes cluster with essentia
   - 2GB RAM
   - 20GB disk space
 - **Ansible Vault Password:** `password`.
-- Optional - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh) located in branch gen-crt.
-  If you generated new certificate it is also important to add it into custom group_vars/custom_vars/ssl-vault.yml
+- Optional :
+   - Self-Signed Certificates: Generate wildcard self-signed certificates for a test domain using the provided script (ssl.sh) located in branch gen-crt.
+   - If you generated new certificate it is also important to add it into custom group_vars/custom_vars/ssl-vault.yml
 
 
 ---
