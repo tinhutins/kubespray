@@ -126,7 +126,8 @@ To upgrade the cluster, update the Kubespray repository to a newer version. The 
 Create a new branch for this new version of kubernetes if it doesn't exists or just checkout to that branch if already defined:
 ```bash
     git checkout -b v2.27.0
-    #if already created
+    git push --set-upstream origin v2.27.0
+    #if already created then just checkout into new branch
     git checkout v2.27.0
 ```
 Afterwards ensure all files are copied from k8s previous branch into this new one (using vscode cp or directly with linux cp).
